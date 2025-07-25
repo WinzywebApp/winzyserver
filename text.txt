@@ -1,0 +1,57 @@
+  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3R1c2VyMkBleGFtcGxlLmNvbSIsInVzZXJuYW1lIjoidGVzdHVzZXIyIiwiaXNibG9jayI6ZmFsc2UsImNvaW5fYmFsYW5jZSI6MTAwMDAsIm1haW5fYmFsYW5jZSI6MTAwMDAsInR5cGUiOiJhZG1pbiIsInJlZmFyYWxfY291bnQiOjAsInJlZmFyYWxfY29kZSI6IjRISzVVWiIsInVzZXJfaWQiOiJ3aW56eV91XzAwMDIiLCJzcGluc1RvZGF5IjowLCJkYWlseVF1aXpDb3VudCI6MCwiaWF0IjoxNzUyNjQ1NDUzfQ.cyAx3wGAMadBYVezAo4SdNXGlPCE6tclJYHQ6rfQXSM   
+
+  {
+  "email": "testuser2@example.com",
+  "username": "testuser2",
+  "isblock": false,
+  "coin_balance": 10000,
+  "main_balance": 10000,
+  "type": "admin",
+  "refaral_count": 0,
+  "refaral_code": "4HK5UZ",
+  "user_id": "winzy_u_0002",
+  "spinsToday": 0,
+  "dailyQuizCount": 0,
+  "iat": 1752645453
+   "password": "testpass123",
+}
+
+
+
+
+
+   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3R1c2VyMUBleGFtcGxlLmNvbSIsInVzZXJuYW1lIjoidGVzdHVzZXIxIiwiaXNibG9jayI6ZmFsc2UsImNvaW5fYmFsYW5jZSI6MTAwMDAsIm1haW5fYmFsYW5jZSI6MTAwMDAsInR5cGUiOiJjdXN0b21lciIsInJlZmFyYWxfY291bnQiOjAsInJlZmFyYWxfY29kZSI6IkQzRUlQSSIsInVzZXJfaWQiOiJ3aW56eV91XzAwMDEiLCJzcGluc1RvZGF5IjowLCJkYWlseVF1aXpDb3VudCI6MCwiaWF0IjoxNzUyNjQ1NjI0fQ.13JSPbWpeNFNgWutNgVAc4Bx5ciRMzKMnJhEELQQo68    
+
+   {
+  "email": "testuser1@example.com",
+  "username": "testuser1",
+  "isblock": false,
+  "coin_balance": 10000,
+  "main_balance": 10000,
+  "type": "customer",
+  "refaral_count": 0,
+  "refaral_code": "D3EIPI",
+  "user_id": "winzy_u_0001",
+  "spinsToday": 0,
+  "dailyQuizCount": 0,
+  "iat": 1752645624
+}
+
+
+
+   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3R1c2VyM0BleGFtcGxlLmNvbSIsInVzZXJuYW1lIjoidGVzdHVzZXIzIiwiaXNibG9jayI6ZmFsc2UsImNvaW5fYmFsYW5jZSI6MjAwMDAsIm1haW5fYmFsYW5jZSI6MjAwMDAsInR5cGUiOiJjdXN0b21lciIsInJlZmFyYWxfY291bnQiOjAsInJlZmFyYWxfY29kZSI6IlFYWjY2ViIsInVzZXJfaWQiOiJ3aW56eV91XzAwMDMiLCJzcGluc1RvZGF5IjowLCJkYWlseVF1aXpDb3VudCI6MCwiaWF0IjoxNzUyNjQ1Nzc1fQ.-wfO6ANsvikTYFnOp_OA2-vCGLyF4llIiIljTM1S2V0"    
+
+   {
+  "email": "testuser3@example.com",
+  "username": "testuser3",
+  "isblock": false,
+  "coin_balance": 20000,
+  "main_balance": 20000,
+  "type": "customer",
+  "refaral_count": 0,
+  "refaral_code": "QXZ66V",
+  "user_id": "winzy_u_0003",
+  "spinsToday": 0,
+  "dailyQuizCount": 0,
+  "iat": 1752645775
+}
