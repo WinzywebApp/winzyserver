@@ -125,54 +125,70 @@ export function userdelete(req,res){
 
 
 export function userlogin(req, res) {
-  User.find({ email: req.body.email }).then(
-    (users) => {
-      if (users.length == 0) {  
+  User.find({ email: req.body.email }).then((users) => {
+    if (users.length === 0) {
+      return res.json({
+        message: "User not found",
+      });
+    } else {
+      const user = users[0];
+      const isPasswordCorrect = bcrypt.compareSync(req.body.password, user.password);
+
+      if (isPasswordCorrect) {
+        const token = jwt.sign(
+          {
+            email: user.email,
+            username: user.username,
+            isblock: user.isblock,
+            coin_balance: user.coin_balance,
+            main_balance: user.main_balance,
+            type: user.type,
+            refaral_count: user.refaral_count,
+            refaral_code: user.refaral_code,
+            user_id: user.user_id,
+            spinsToday: user.spinsToday,
+            lastSpinAt: user.lastSpinAt,
+            dailyWinnerDate: user.dailyWinnerDate,
+            dailyQuizCount: user.dailyQuizCount,
+            lastQuizAt: user.lastQuizAt,
+          },
+          process.env.JWT_KEY
+        );
+
         return res.json({
-          message: "User not found" 
+          message: "User login success",
+          token: token,
+          user: {
+            email: user.email,
+            username: user.username,
+            isblock: user.isblock,
+            coin_balance: user.coin_balance,
+            main_balance: user.main_balance,
+            type: user.type,
+            refaral_count: user.refaral_count,
+            refaral_code: user.refaral_code,
+            user_id: user.user_id,
+            spinsToday: user.spinsToday,
+            lastSpinAt: user.lastSpinAt,
+            dailyWinnerDate: user.dailyWinnerDate,
+            dailyQuizCount: user.dailyQuizCount,
+            lastQuizAt: user.lastQuizAt,
+          },
         });
       } else {
-        const user = users[0];
-        const isPasswordCorrect = bcrypt.compareSync(req.body.password, user.password);
-
-        if (isPasswordCorrect) {
-            const token = jwt.sign({
-              email:user.email,
-              username:user.username,
-              isblock:user.isblock,
-              coin_balance:user.coin_balance, 
-              main_balance:user.main_balance,
-              type:user.type,
-              refaral_count:user.refaral_count,
-              refaral_code:user.refaral_code,
-              user_id:user.user_id,
-              spinsToday:user.spinsToday,
-              lastSpinAt:user.lastSpinAt,
-              dailyWinnerDate:user.dailyWinnerDate,
-              dailyQuizCount:user.dailyQuizCount,
-              lastQuizAt:user.lastQuizAt
-
-            },process.env.JWT_KEY);
-            
-          return res.json({
-            message: "User login success",
-            token : token
-         
-          });
-        } else {
-          return res.json({ 
-            message: "Password is incorrect, please try again"  
-          });
-        }
+        return res.json({
+          message: "Password is incorrect, please try again",
+        });
       }
     }
-  ).catch((err) => {
+  }).catch((err) => {
     console.error(err);
     return res.status(500).json({
-      message: "Server error"
+      message: "Server error",
     });
   });
 }
+
 
 
 
