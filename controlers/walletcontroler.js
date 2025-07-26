@@ -61,13 +61,13 @@ export const createRequest = async (req, res) => {
 // 📄 Get all requests by user_id (User Profile)
 export const getUserRequests = async (req, res) => {
   try {
-    const user_id = req.user.user_id; // ✅ directly assign user_id
-    const requests = await PaymentRequest.find({ user_id }).sort({ created_at: -1 });
+    const requests = await PaymentRequest.find().sort({ created_at: -1 });
     res.json(requests);
   } catch (err) {
     res.status(500).json({ message: "Error fetching requests", error: err.message });
   }
 };
+
 
 // 🔎 Get all pending requests by username (Admin)
 export const getPendingRequestsByUsername = async (req, res) => {
