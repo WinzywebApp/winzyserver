@@ -18,5 +18,5 @@ walletrouter.delete("/delete/:request_id", deleteRequest);
 // Admin routes
 walletrouter.get("/pending/:username", getPendingRequestsByUsername);
 walletrouter.put("/accept/:request_id", acceptRequest);
-walletrouter.put("/delete/:request_id", adminDeleteRequest);
+walletrouter.delete("/Adelete/:request_id", adminDeleteRequest);
 export default walletrouter;
