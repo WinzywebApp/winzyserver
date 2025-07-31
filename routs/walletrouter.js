@@ -3,7 +3,9 @@ import {
   createRequest,
   getUserRequests,
   getPendingRequestsByUsername,
-  acceptRequest
+  acceptRequest,
+  deleteRequest,
+  adminDeleteRequest
 } from "../controlers/walletcontroler.js";
 
 
@@ -11,10 +13,10 @@ const walletrouter = express.Router();
 
 // User routes
 walletrouter.post("/create", createRequest);
-walletrouter.get("/user/", getUserRequests);
-
+walletrouter.get("/reqwest/", getUserRequests);
+walletrouter.delete("/delete/:request_id", deleteRequest);
 // Admin routes
 walletrouter.get("/pending/:username", getPendingRequestsByUsername);
 walletrouter.put("/accept/:request_id", acceptRequest);
-
+walletrouter.put("/delete/:request_id", adminDeleteRequest);
 export default walletrouter;
