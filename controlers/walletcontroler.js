@@ -193,3 +193,22 @@ export const adminDeleteRequest = async (req, res) => {
       .json({ message: "Error deleting request", error: err.message });
   }
 };
+
+
+export const getAllPaymentRequests = async (req, res) => {
+  try {
+    // authentication/authorization තියෙනවා නම් middleware එකෙන් හොඳයි
+    const requests = await PaymentRequest.find({}).lean();
+
+    return res.json({
+      total: requests.length,
+      data: requests,
+    });
+  } catch (err) {
+    console.error("Error fetching all payment requests:", err);
+    return res
+      .status(500)
+      .json({ message: "Error fetching requests", error: err.message });
+  }
+};
+

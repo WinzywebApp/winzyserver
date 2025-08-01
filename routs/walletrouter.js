@@ -5,7 +5,8 @@ import {
   getPendingRequestsByUsername,
   acceptRequest,
   deleteRequest,
-  adminDeleteRequest
+  adminDeleteRequest,
+  getAllPaymentRequests
 } from "../controlers/walletcontroler.js";
 
 
@@ -19,4 +20,5 @@ walletrouter.delete("/delete/:request_id", deleteRequest);
 walletrouter.get("/pending/:username", getPendingRequestsByUsername);
 walletrouter.put("/accept/:request_id", acceptRequest);
 walletrouter.delete("/Adelete/:request_id", adminDeleteRequest);
+walletrouter.get("/all",getAllPaymentRequests);
 export default walletrouter;
