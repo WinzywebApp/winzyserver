@@ -1,10 +1,9 @@
 import Bet from '../moduls/bets.js';
 import BetItem from '../moduls/betitem.js';
 import User from '../moduls/user.js';
-import Winner from '../moduls/dailywiner.js';
 import { DateTime } from 'luxon';
 import { nanoid } from 'nanoid';
-import { Winner } from "../models/Winner";
+import { Winner } from "../moduls/betwiner.js";
 
 const TZ = 'Asia/Colombo';
 
