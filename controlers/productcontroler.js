@@ -117,36 +117,39 @@ export async function deleteProductByItemId(req, res) {
 
 
 
-
 export async function updateProductByItemId(req, res) {
   try {
-    // 🔐 Check if user is authenticated
     const user = req.user;
     if (!user) {
       return res.status(401).json({ message: "Please log in first" });
     }
-
-    // 🔐 Check if user is an admin
     if (user.type !== "admin") {
       return res.status(403).json({ message: "Only admin can edit products" });
     }
 
-    const { product_id } = req.params;
+   const product_id = req.params.product_id || req.body.product_id;
+console.log("Received product_id:", product_id);
+if (!product_id) {
+  return res.status(400).json({ message: "product_id is required" });
+}
+    
 
-    if (!product_id) {
-      return res.status(400).json({ message: "product_id is required" });
-    }
-
-    // Fields that can be updated
+    // Make sure quantity is spelled correctly, and fields match frontend keys or vice versa
     const updatedData = {
       name: req.body.name,
       description: req.body.description,
-      point_price: req.body.point_price,
+      point_price: req.body.point_price, // OR rename frontend to send point_price
       main_price: req.body.main_price,
       image: req.body.image,
-      category:req.body.category,
-      product_type:req.body.product_type
+      category: req.body.category,
+      product_type: req.body.product_type,
+      quantity: req.body.quantity,  // Fixed typo + field name
     };
+
+    // Remove undefined keys from updatedData (optional but recommended)
+    Object.keys(updatedData).forEach(
+      (key) => updatedData[key] === undefined && delete updatedData[key]
+    );
 
     const updatedProduct = await Product.findOneAndUpdate(
       { product_id },
@@ -160,16 +163,17 @@ export async function updateProductByItemId(req, res) {
 
     return res.status(200).json({
       message: "Product updated successfully",
-      product: updatedProduct
+      product: updatedProduct,
     });
   } catch (err) {
     console.error("Error updating product:", err);
     return res.status(500).json({
       message: "Failed to update product",
-      error: err.message
+      error: err.message,
     });
   }
 }
+
 
 
 

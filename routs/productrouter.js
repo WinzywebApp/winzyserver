@@ -6,7 +6,7 @@ const productrouter = express.Router();
 productrouter.get('/viwe/:item_id',productFind);
 productrouter.post('/creat',productcreat); 
 productrouter.delete('/delete/:item_id', deleteProductByItemId);
-productrouter.put('/edite/:item_id', updateProductByItemId);
+productrouter.put('/edite/:product_id', updateProductByItemId);
 productrouter.get('/',getAllProducts);
 productrouter.get('/category', getCategoryTypeAProducts);
 

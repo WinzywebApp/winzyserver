@@ -1,6 +1,7 @@
 import PaymentRequest from "../moduls/wallet.js";
 import User from "../moduls/user.js";
 import { DateTime } from "luxon";
+import { sendPaymentAccepted } from "../bot/bot.js";
 
 
 
@@ -159,12 +160,28 @@ export const acceptRequest = async (req, res) => {
     request.status = "accepted";
     await request.save();
 
+    // Telegram notification (non-blocking)
+    (async () => {
+      try {
+        const telegramChatId = user.telegram_chat_id;
+        if (telegramChatId) {
+          await sendPaymentAccepted(telegramChatId.toString(), {
+            request_id: request.request_id,
+            amount: request.amount,
+            new_balance: user.main_balance,
+            timestamp: new Date().toLocaleString(),
+          });
+        }
+      } catch (botErr) {
+        console.warn("Failed to send payment acceptance notification:", botErr?.message || botErr);
+      }
+    })();
+
     res.json({ message: "Request accepted and balance updated", request });
   } catch (err) {
     res.status(500).json({ message: "Error accepting request", error: err.message });
   }
 };
-
 
 
 // 🗑️ Admin deletes any request by request_id

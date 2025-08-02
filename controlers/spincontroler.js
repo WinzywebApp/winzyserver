@@ -21,9 +21,9 @@ function chooseNormalNumber() {
 }
 
 function coinsForNumber(num) {
-  if (num >= 1 && num <= 2000) return mul10(rand(100, 500));
-  if (num >= 2500 && num <= 4000) return mul10(rand(1000, 1500));
-  if (num >= 4500 && num <= 5000) return mul10(rand(2000, 2500));
+  if (num >= 1 && num <= 2000) return mul10(rand(0, 50));
+  if (num >= 2500 && num <= 4000) return mul10(rand(50, 100));
+  if (num >= 4500 && num <= 5000) return mul10(rand(100, 150));
   return 0;
 }
 
@@ -33,12 +33,12 @@ function scheduledSpecial(now) {
   if (minute !== 0) return null;
 
   const map = {
-    0: { num: 1, coins: 5000 },
-    3: { num: 2, coins: 5000 },
-    6: { num: 3, coins: 5000 },
-    9: { num: 4, coins: 5000 },
-    12: { num: 1, coins: 5000 },
-    15: { num: 2, coins: 5000 },
+    0: { num: 1, coins: 500 },
+    3: { num: 2, coins: 500 },
+    6: { num: 3, coins: 500 },
+    9: { num: 4, coins: 500 },
+    12: { num: 1, coins: 500 },
+    15: { num: 2, coins: 500 },
   };
 
   return map[hour] ?? null;
@@ -74,7 +74,7 @@ export const spin = async (req, res) => {
 
     if (!dailyWinnerExists && special === null) {
       number = 9999;
-      coins = 10000;
+      coins = 1000;
     } else if (special) {
       number = special.num;
       coins = special.coins;
@@ -83,7 +83,7 @@ export const spin = async (req, res) => {
       coins = coinsForNumber(number);
     }
 
-    if (number === 9999 && coins === 10000 && !dailyWinnerExists) {
+    if (number === 9999 && coins === 1000 && !dailyWinnerExists) {
       await DailyWinner.create({ date: new Date(todayStr), user: user.user_id });
       user.dailyWinnerDate = new Date(todayStr);
     }

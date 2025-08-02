@@ -55,3 +55,16 @@
   "dailyQuizCount": 0,
   "iat": 1752645775
 }
+
+
+{
+  "email": "john.doe@example.com",
+  "username": "johnny",
+  "password": "mypassword123",
+  "telegram_chat_id": "123456789",
+  "verification_code": "482917",
+  "refaral_from": "ABC123", 
+  "type": "customer"
+}
+
+ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwidXNlcm5hbWUiOiJqb2hubnkiLCJpc2Jsb2NrIjpmYWxzZSwiY29pbl9iYWxhbmNlIjowLCJtYWluX2JhbGFuY2UiOjAsInR5cGUiOiJjdXN0b21lciIsInJlZmFyYWxfY291bnQiOjAsInJlZmFyYWxfY29kZSI6IkpXME1QMyIsInVzZXJfaWQiOiJ3aW56eV91XzAwMTYiLCJzcGluc1RvZGF5IjowLCJkYWlseVF1aXpDb3VudCI6MCwidGVsZWdyYW1fY2hhdF9pZCI6NTg3ODkwNDE4MiwiaWF0IjoxNzU0MTQ4NjkzfQ.WeZ5nMzpS2okFpffHouSIMiaNR8Bm3CDltTTtsD-mEE

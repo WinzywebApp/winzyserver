@@ -1,9 +1,11 @@
 import Order from '../moduls/oder.js';
 import Product from '../moduls/product.js';
 import User from '../moduls/user.js'
+import { sendOrderPlaced , sendOrderStatusUpdate  } from "../bot/bot.js";
 
 
  
+
 
 
 export async function orderCreate(req, res) {
@@ -18,7 +20,7 @@ export async function orderCreate(req, res) {
     if (user.type !== "customer") {
       return res.status(403).json({ message: "Only customers can place orders" });
     } 
- 
+
     const { product_id, quantity, user_address } = req.body;
 
     // ✅ Phone Number Validation
@@ -71,10 +73,10 @@ export async function orderCreate(req, res) {
 
     // ✅ Build Order Product Details — FIXED FIELD NAMES AND TYPES
     const product_details = {
-      product_id: product._id, // Use MongoDB ObjectId as required by schema
+      product_id: product._id,
       product_name: product.name,
-      product_coin_balance: product.coin_price, // Correct field name
-      product_main_balance: product.main_price  // Correct field name
+      product_coin_balance: product.coin_price,
+      product_main_balance: product.main_price
     };
 
     // ✅ Create New Order
@@ -97,6 +99,27 @@ export async function orderCreate(req, res) {
     dbUser.coin_balance -= total_coin_balance;
     dbUser.main_balance -= total_main_balance;
     await dbUser.save();
+
+    // ✅ Send Telegram notification if chat id available
+   try {
+  const telegramChatId = user.telegram_chat_id || dbUser.telegram_chat_id;
+  if (telegramChatId) {
+    // Prepare order summary for bot, including status
+    const orderForBot = {
+      order_id: newOrderId,
+      product_name: product.name,
+      price: total_main_balance, // or include both coin & main if needed
+      currency: "LKR",
+      status: newOrder.status || "pending", // එක schema එකේ තියෙන status එක හෝ default එකක්
+      date: newOrder.order_created_date || new Date()
+    };
+    await sendOrderPlaced(telegramChatId.toString(), orderForBot);
+  }
+}
+  catch (botErr) {
+      console.warn("Failed to send Telegram order notification:", botErr?.message || botErr);
+      // not blocking the main response
+    }
 
     // ✅ Success Response
     return res.status(201).json({
@@ -198,6 +221,26 @@ export async function adminUpdateOrderStatus(req, res) {
 
     order.status = status.toLowerCase();
     await order.save();
+
+    // Telegram notification (non-blocking) using existing bot function
+    (async () => {
+      try {
+        const userRecord = await User.findOne({ email: order.user_email });
+        const telegramChatId = userRecord?.telegram_chat_id;
+        if (telegramChatId) {
+          // සාමාන්‍ය message payload එක
+          const payload = {
+            order_id: order.order_id,
+            status: order.status,
+            updated_at: new Date().toLocaleString(),
+          };
+          // ඔයාගේ bot එකේ තිබෙන function එකක් කැඳවන්න
+          await sendOrderStatusUpdate(telegramChatId.toString(), payload);
+        }
+      } catch (botErr) {
+        console.warn("Failed to send order status update via Telegram:", botErr?.message || botErr);
+      }
+    })();
 
     return res.status(200).json({ message: "Order status updated", order });
   } catch (err) {

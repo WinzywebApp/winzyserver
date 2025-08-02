@@ -3,28 +3,57 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
 dotenv.config()
+import VerificationCode from "../moduls/verification.js";
+import { sendVerificationCode,sendPasswordResetCode } from "../bot/bot.js"; 
 
-// Referral reward amount
 
 const REFERRAL_REWARD = 5;
 
+ // TTL schema model
+
+
 export async function usercreat(req, res) {
   try {
-    const newUserData = req.body;
+    const {
+      email,
+      username,
+      password,
+      type,
+      refaral_from,
+      telegram_chat_id,
+      verification_code,
+    } = req.body;
 
-    // Check admin creation
-    if (newUserData.type === "admin") {
+    // අවශ්‍ය fields තිබෙනවාද බලන්න
+    if (!email || !username || !password) {
+      return res.status(400).json({ message: "email, username and password are required" });
+    }
+    if (!telegram_chat_id || !verification_code) {
+      return res.status(400).json({ message: "telegram_chat_id and verification_code required" });
+    }
+
+    // verification code validate කරන්න
+    const codeRecord = await VerificationCode.findOne({
+      telegram_chat_id: telegram_chat_id.toString(),
+      code: verification_code.toString(),
+    });
+    if (!codeRecord) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    // admin creation permission check
+    let userType = "customer";
+    if (type === "admin") {
       if (!req.user || req.user.type !== "admin") {
         return res.status(403).json({ message: "Only admins can create admin accounts" });
       }
-    } else {
-      newUserData.type = "customer";
+      userType = "admin";
     }
 
-    // Password hashing
-    newUserData.password = bcrypt.hashSync(newUserData.password, 10);
+    // password hashing
+    const hashedPassword = bcrypt.hashSync(password, 10);
 
-    // 🔁 Generate Unique Referral Code (Inline function)
+    // Generate unique referral code
     const generateUniqueReferralCode = async (length = 6) => {
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let code;
@@ -38,27 +67,31 @@ export async function usercreat(req, res) {
       }
       return code;
     };
-
-    newUserData.refaral_code = await generateUniqueReferralCode();
+    const referralCode = await generateUniqueReferralCode();
 
     // Referral reward logic
-    if (newUserData.refaral_from) {
-      const referrer = await User.findOne({ refaral_code: newUserData.refaral_from });
-
-      if (referrer) {
-        // Add coin to referrer
-        referrer.coin_balance += REFERRAL_REWARD;
-        referrer.refaral_count += 1;
-        await referrer.save();
-
-        // Add coin to referred user
-        newUserData.coin_balance = (newUserData.coin_balance || 0) + REFERRAL_REWARD;
-      } else {
-        return res.status(400).json({ message: "Invalid referral code" });
-      }
+    let initialCoinBalance = 0;
+if (refaral_from) {
+  const referrer = await User.findOne({ refaral_code: refaral_from });
+  if (referrer) {
+    // referrer එකට reward දීමේ සීමාව (අපේක්ෂිත max 5)
+    if ((referrer.refaral_count || 0) < 5) {
+      referrer.coin_balance = (referrer.coin_balance || 0) + REFERRAL_REWARD;
+      referrer.refaral_count = (referrer.refaral_count || 0) + 1;
+      await referrer.save();
+    } else {
+      console.log(`Referral reward limit reached for referrer ${referrer.user_id}`);
     }
 
-    // 🔢 Generate user_id
+    // referred user එකට එකවර 5 coin දෙනවා (valid code එකක් වුනොත්)
+    initialCoinBalance += REFERRAL_REWARD;
+  } else {
+    return res.status(400).json({ message: "Invalid referral code" });
+  }
+}
+
+
+    // Generate user_id in sequence
     const lastUser = await User.findOne({}).sort({ _id: -1 });
     let newUserId;
     if (lastUser && lastUser.user_id) {
@@ -68,26 +101,52 @@ export async function usercreat(req, res) {
     } else {
       newUserId = "winzy_u_0001";
     }
-    newUserData.user_id = newUserId;
 
-    // Save new user
-    const newUser = new User(newUserData);
+    // Build and save user
+    const newUser = new User({
+      email,
+      username,
+      password: hashedPassword,
+      type: userType,
+      refaral_code: referralCode,
+      refaral_from: refaral_from || null,
+      coin_balance: initialCoinBalance,
+      main_balance: 0,
+      refaral_count: 0,
+      user_id: newUserId,
+      telegram_chat_id: telegram_chat_id,
+      
+    });
+
     await newUser.save();
 
-    res.status(201).json({ message: 'User created successfully' });
+    // Cleanup used verification code(s)
+    await VerificationCode.deleteMany({ telegram_chat_id: telegram_chat_id.toString() });
 
+    return res.status(201).json({
+      message: "User created and verified successfully",
+      user_id: newUserId,
+    });
   } catch (err) {
-    console.error(err);
+    console.error("usercreat error:", err);
     if (err.code === 11000) {
-      if (err.message.includes('email')) {
-        return res.status(400).json({ message: 'Email already exists' });
+      if (err.message.includes("email")) {
+        return res.status(400).json({ message: "Email already exists" });
       }
-      if (err.message.includes('username')) {
-        return res.status(400).json({ message: 'Username already exists' });
+      if (err.message.includes("username")) {
+        return res.status(400).json({ message: "Username already exists" });
       }
-    }
+      if (err.message.includes("refaral_code")) {
+        return res.status(400).json({ message: "Referral code collision, try again" });
+      }     
+      if (err.message.includes('telegram_chat_id')) {
+    return res.status(400).json({ message: 'Telegram chat ID already registered' });
+  }
+  
 
-    res.status(500).json({ message: 'Server error' });
+
+}
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 }
 
@@ -151,6 +210,7 @@ export function userlogin(req, res) {
             dailyWinnerDate: user.dailyWinnerDate,
             dailyQuizCount: user.dailyQuizCount,
             lastQuizAt: user.lastQuizAt,
+            telegram_chat_id:user.telegram_chat_id,
           },
           process.env.JWT_KEY
         );
@@ -173,6 +233,7 @@ export function userlogin(req, res) {
             dailyWinnerDate: user.dailyWinnerDate,
             dailyQuizCount: user.dailyQuizCount,
             lastQuizAt: user.lastQuizAt,
+            telegram_chat_id:user.telegram_chat_id,
           },
         });
       } else {
@@ -251,5 +312,104 @@ export function isCustomer(req){
   } catch (error) {
     console.error("Error in getUserProfile:", error);
     return res.status(500).json({ message: "Server error" });
+  }
+}
+
+
+
+
+
+
+// 6-digit numeric code generator
+// 6-digit numeric code generator
+function generateSixDigitCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export async function createAndSendVerificationCode(req, res) {
+  try {
+    const { telegram_chat_id } = req.body;
+
+    if (!telegram_chat_id) {
+      return res.status(400).json({ message: "telegram_chat_id is required" });
+    }
+
+    // Generate a fresh 6-digit code
+    const code = generateSixDigitCode();
+
+    // Remove any old active code for this chat_id
+    await VerificationCode.deleteMany({ telegram_chat_id: telegram_chat_id.toString() });
+
+    // Save the new verification code (auto-expires in 30s via TTL)
+    const vc = new VerificationCode({
+      telegram_chat_id: telegram_chat_id.toString(),
+      code,
+    });
+    await vc.save();
+
+    // Send the code via bot
+    await sendVerificationCode(telegram_chat_id.toString(), code);
+
+    return res.status(200).json({
+      message: "Verification code saved & sent via bot",
+      telegram_chat_id,
+    });
+  } catch (err) {
+    
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
+}
+
+
+
+
+
+
+
+// Password reset handler
+export async function resetPassword(req, res) {
+  try {
+    const { telegram_chat_id, verification_code, new_password } = req.body;
+
+    if (!telegram_chat_id || !verification_code || !new_password) {
+      return res.status(400).json({ message: "telegram_chat_id, verification_code and new_password are required" });
+    }
+
+    // Find valid verification code record (not expired)
+    const codeRecord = await VerificationCode.findOne({
+      telegram_chat_id: telegram_chat_id.toString(),
+      code: verification_code.toString(),
+    });
+
+    if (!codeRecord) {
+      return res.status(400).json({ message: "Invalid or expired verification code" });
+    }
+
+    // Find the user by telegram_chat_id
+    const user = await User.findOne({ telegram_chat_id: telegram_chat_id.toString() });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Hash the new password
+    const hashedPassword = bcrypt.hashSync(new_password, 10);
+
+    // Update user's password
+    user.password = hashedPassword;
+    await user.save();
+
+    // Delete used verification codes for this user/chat
+    await VerificationCode.deleteMany({ telegram_chat_id: telegram_chat_id.toString() });
+
+    // Optionally send confirmation message via bot
+    await sendPasswordResetCode(telegram_chat_id.toString(), "✅ Your password has been successfully reset.");
+
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error("resetPassword error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
   }
 }

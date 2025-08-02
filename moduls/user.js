@@ -76,6 +76,10 @@ const userSchema = new mongoose.Schema({
 
   lastQuizAt: {
     type: Date
+  },
+  telegram_chat_id: {
+    type: Number,
+    default: null,
   }
 
 }, { timestamps: true });
