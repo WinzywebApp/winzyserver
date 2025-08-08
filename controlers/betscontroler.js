@@ -3,7 +3,8 @@ import BetItem from '../moduls/betitem.js';
 import User from '../moduls/user.js';
 import { nanoid } from 'nanoid';
 import { Winner } from "../moduls/betwiner.js";
-import { sendBetPlaced, sendBetWinner } from '../bot/bot.js';
+import { sendBetPlaced, sendBetWinner } from '../bot/bot.js'; 
+import { DateTime } from "luxon";
 
 const TZ = 'Asia/Colombo';
 
@@ -77,7 +78,7 @@ export async function selectWinnerByAdmin(req, res) {
           product_image: product.product_image,
           product_price: product.main_price,
           user_email: selectedBet.user_email,
-          user_name: selectedBet.user_info?.name || "",
+          user_name: selectedBet.user_info?.name ,
           bet_code: selectedBet.code,
           date: new Date(),
         },
@@ -117,11 +118,32 @@ export async function selectWinnerByAdmin(req, res) {
 
 export async function placeBet(req, res) {
   try {
-    const { product_id, name, address, city, contact } = req.body;
+    const { product_id, name, address, city, contact, quantity = 1, user_address } = req.body;
     const userId = req.user?.user_id;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Normalize user info: allow either flat or nested user_address
+    let finalName = name;
+    let finalAddress = address;
+    let finalCity = city;
+    let finalContact = contact;
+
+    if (user_address) {
+      finalName = user_address.name || finalName;
+      finalAddress = user_address.address_line || finalAddress;
+      finalCity = user_address.district || finalCity;
+      finalContact = user_address.phone_number || finalContact;
+    }
+
+    // Basic validation
+    if (!product_id) {
+      return res.status(400).json({ message: "Missing product_id" });
+    }
+    if (!finalName || !finalAddress || !finalCity || !finalContact) {
+      return res.status(400).json({ message: "Incomplete user info (name, address, city, contact required)" });
     }
 
     const dbUser = await User.findOne({ user_id: userId });
@@ -130,19 +152,21 @@ export async function placeBet(req, res) {
     const product = await BetItem.findOne({ product_id });
     if (!product) return res.status(404).json({ message: "Product not found" });
 
-    // ✅ Betting window check: end_time ඉක්මවා ගියා නම් bet place කරන්න බැහැ
+    // Betting window check
     const now = DateTime.now().setZone(TZ);
     const end = DateTime.fromJSDate(product.end_time).setZone(TZ);
     if (now > end) {
       return res.status(400).json({ message: "Betting time is over" });
     }
 
-    // ✅ Main balance >= product price
-    if (dbUser.main_balance < product.main_price) {
+    // Price calculation: assuming quantity always 1 for bet; adjust if you allow multiple
+    const totalPrice = product.main_price * quantity;
+
+    if (dbUser.main_balance < totalPrice) {
       return res.status(400).json({ message: "Insufficient balance" });
     }
 
-    // ✅ Bet ID generate
+    // Generate bet_id
     const latestBet = await Bet.findOne().sort({ bet_id: -1 });
     let nextIdNum = 1;
     if (latestBet && latestBet.bet_id) {
@@ -151,51 +175,56 @@ export async function placeBet(req, res) {
         nextIdNum = parseInt(match[1], 10) + 1;
       }
     }
-    const newBetId = `bet_${String(nextIdNum).padStart(4, '0')}`;
+    const newBetId = `bet_${String(nextIdNum).padStart(4, "0")}`;
 
-    // ✅ Unique English letters 8 characters code
+    // Code
     const betCode = nanoid(8);
 
-    // ✅ Balance deduction
-    dbUser.main_balance -= product.main_price;
-    await dbUser.save();
 
-    // ✅ Save bet
+    // Save bet
     const newBet = new Bet({
       bet_id: newBetId,
       user_email: dbUser.email,
       code: betCode,
-      user_info: { name, address, city, contact },
+      user_info: {
+        name: finalName,
+        address: finalAddress,
+        city: finalCity,
+        contact: finalContact,
+      },
       product_id: product.product_id,
       product_name: product.name,
       product_price: product.main_price,
-      created_at: new Date()
+      quantity,
+      created_at: new Date(),
     });
-
+    dbUser.main_balance -= totalPrice;
+    await dbUser.save();
     await newBet.save();
 
-    // ✅ Send Telegram notification about bet placed (if chat ID exists)
+    // Telegram notification
     try {
       const telegramChatId = req.user?.telegram_chat_id || dbUser.telegram_chat_id;
       if (telegramChatId) {
         await sendBetPlaced(telegramChatId.toString(), {
           bet_id: newBet.bet_id,
           product_name: newBet.product_name,
-          product_price: newBet.product_price,
+          product_price: product.main_price,
           date: newBet.created_at,
+          quantity: newBet.quantity,
         });
       }
     } catch (botErr) {
       console.warn("Failed to send bet placed notification:", botErr?.message || botErr);
-    }
+    }   
 
     return res.status(201).json({
       message: "Bet placed successfully",
       bet: newBet,
-      remaining_balance: dbUser.main_balance
+      remaining_balance: dbUser.main_balance,
     });
-
   } catch (err) {
+    console.error("placeBet error:", err);
     return res.status(500).json({ message: "Error placing bet", error: err.message });
   }
 }

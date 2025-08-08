@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const SERVER_API_BASE = process.env.SERVER_API_BASE || "http://localhost:5000";
+
 if (!TELEGRAM_BOT_TOKEN) {
   console.error("❌ Missing TELEGRAM_BOT_TOKEN in .env");
   process.exit(1);
@@ -60,7 +62,6 @@ export async function sendOrderPlaced(chatId, order) {
   await sendBotMessage(chatId, msg);
 }
 
-
 /**
  * Send bet placed message
  */
@@ -85,9 +86,9 @@ export async function sendBetWinner(chatId, winner) {
   await sendBotMessage(chatId, msg);
 }
 
-
-
-// botController.js (ඔයාගේම එකේ)
+/**
+ * Send order status update notification
+ */
 export async function sendOrderStatusUpdate(chatId, { order_id, status, updated_at }) {
   const msg = `📦 *Order Status Updated*\n\n` +
               `🆔 Order ID: \`${order_id}\`\n` +
@@ -95,7 +96,6 @@ export async function sendOrderStatusUpdate(chatId, { order_id, status, updated_
               `🕒 Updated At: ${updated_at}`;
   await sendBotMessage(chatId, msg);
 }
-
 
 /**
  * Payment request accepted notification
@@ -110,9 +110,40 @@ export async function sendPaymentAccepted(chatId, { request_id, amount, new_bala
 }
 
 /**
+ * Notify referrer when someone joins with their referral code
+ */
+export async function sendNewReferralNotification(chatId, referredUser, referralReward) {
+  const msg = `🎉 *New Referral Joined!*\n\n` +
+              `👥 Username: *${referredUser.username}*\n` +
+              `💰 You received +${referralReward} coins!\n` +
+              `🪙 Total Referrals: ${referredUser.refaral_count || 1}`;
+  await sendBotMessage(chatId, msg);
+}
+
+/**
  * Send password reset code
  */
 export async function sendPasswordResetCode(chatId, code) {
   const msg = `🔑 *Password Reset Code:* \`${code}\`\n⌛ _Valid for 10 minutes._`;
   await sendBotMessage(chatId, msg);
 }
+
+
+// ===== Telegram Bot Listener for /start command =====
+import TelegramBot from "node-telegram-bot-api";
+
+const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+
+bot.onText(/\/start/, async (msg) => {
+  const chatId = msg.chat.id;
+  const firstName = msg.chat.first_name || "User";
+
+  // 1) Send welcome message
+  await bot.sendMessage(chatId,
+    `👋 Hello *${firstName}*!\n\n` +
+    `Welcome to *COOBA.*! 🏆\n\n` +
+    `To register, please visit the app or provide your email and username.\n\n` +
+    `🆔 *Your Telegram Chat ID:* \`${chatId}\``,
+    { parse_mode: "Markdown" }
+  );
+});

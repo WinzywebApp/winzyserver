@@ -2,8 +2,8 @@ import AdWatch from "../moduls/ads.js";
 import User from "../moduls/user.js";
 import { DateTime } from "luxon";
 
-const MAX_ADS_PER_DAY = 10;
-const COINS_PER_AD = 1000;
+const MAX_ADS_PER_DAY = 20;
+const COINS_PER_AD = 100;
 
 export const watchAd = async (req, res) => {
   try {
@@ -21,7 +21,7 @@ export const watchAd = async (req, res) => {
     if (adsWatchedTodayCount >= MAX_ADS_PER_DAY) {
       return res.status(429).json({
         success: false,
-        message: "You reached max 10 ads for today",
+        message: "You reached max 20 ads for today",
       });
     }
 
@@ -39,7 +39,7 @@ export const watchAd = async (req, res) => {
     // Respond to user immediately
     res.json({
       success: true,
-      message: `Ad watched! Coins will be added in 18 seconds.`,
+      message: `Ad watched! Coins will be added in 15 seconds.`,
       ad_id,
       adsWatchedToday: adsWatchedTodayCount + 1,
       adsLeft: MAX_ADS_PER_DAY - (adsWatchedTodayCount + 1),
@@ -60,7 +60,7 @@ export const watchAd = async (req, res) => {
       );
 
       console.log(`✅ Coins added to ${userId} for ${ad_id} after 18s`);
-    }, 18000);
+    }, 16000);
   } catch (error) {
     console.error("Error watching ad:", error);
     res.status(500).json({
@@ -93,7 +93,7 @@ export const getAdStats = async (req, res) => {
       adsWatchedToday,
       adsLeft: MAX_ADS_PER_DAY - adsWatchedToday,
     });
-  } catch (error) {
+  } catch (error) {  
     console.error("Error fetching ad stats:", error);
     res.status(500).json({
       success: false,

@@ -6,8 +6,8 @@ const oderRouter = express.Router();
 oderRouter.post("/creat",orderCreate);
 oderRouter.get('/view',findeoder);
 oderRouter.get('/all',getOrdersSimple)
-oderRouter.put('/update/:roder_id',adminUpdateOrderStatus);
+oderRouter.put('/update/:order_id',adminUpdateOrderStatus);
 
 
 export default oderRouter;  
-
+ 

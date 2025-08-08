@@ -23,7 +23,7 @@ export const getAvailableTasks = async (req, res) => {
     const tasks = await Task.find(query);
     res.json({ success: true, tasks });
   } catch (err) {
-    console.error('Error fetching tasks:', err);
+   
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -58,7 +58,7 @@ export const completeTask = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Error completing task:', err);
+    
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -93,7 +93,7 @@ export const taskCreate = async (req, res) => {
     res.status(201).json({ success: true, message: "Task created successfully", task: newTask });
 
   } catch (error) {
-    console.error("Error creating task:", error);
+    
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -108,7 +108,7 @@ export const getAllTasks = async (req, res) => {
     const tasks = await Task.find().sort({ date: -1 });
     res.status(200).json({ success: true, tasks });
   } catch (error) {
-    console.error("Error fetching tasks:", error);
+   
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -135,7 +135,7 @@ export const updateTaskById = async (req, res) => {
 
     res.status(200).json({ success: true, message: "Task updated", task: updatedTask });
   } catch (error) {
-    console.error("Error updating task:", error);
+    
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
@@ -156,7 +156,7 @@ export const deleteTaskById = async (req, res) => {
 
     res.status(200).json({ success: true, message: "Task deleted", task: deletedTask });
   } catch (error) {
-    console.error("Error deleting task:", error);
+   
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

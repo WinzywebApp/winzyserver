@@ -7,6 +7,11 @@ const orderSchema = new mongoose.Schema({
     lowercase: true,
     trim: true,
   },
+  user_name: {
+    type: String,
+    lowercase: true,
+    trim: true,
+  },
   user_address: {
     phone_number: {
       type: String,
@@ -57,10 +62,15 @@ const orderSchema = new mongoose.Schema({
     required: true,
     default: Date.now,
   },
-  order_status: {
+  order_status: { 
     type: String,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
     default: 'pending',
+  },
+  order_id :{
+    type : String,
+     required: true,   
+    
   },
 });
 

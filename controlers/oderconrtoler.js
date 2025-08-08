@@ -66,9 +66,9 @@ export async function orderCreate(req, res) {
     if (last.length > 0 && last[0].order_id) {
       const lastNumber = parseInt(last[0].order_id.slice(10), 10);
       const next = lastNumber + 1;
-      newOrderId = `winzy_od_${next.toString().padStart(4, '0')}`;
+      newOrderId = `cooba_od_${next.toString().padStart(4, '0')}`;
     } else {
-      newOrderId = "winzy_od_0001";
+      newOrderId = "cooba_od_0001";
     }
 
     // ✅ Build Order Product Details — FIXED FIELD NAMES AND TYPES
@@ -83,6 +83,7 @@ export async function orderCreate(req, res) {
     const newOrder = new Order({
       order_id: newOrderId,
       user_email: user.email,
+      user_name: user.username,
       user_address,
       product_details,
       quantity,
@@ -191,60 +192,71 @@ export async function getOrdersSimple(req, res) {
 }
 
 
-
-
+  
 
 // PATCH /admin/order/:order_id
-export async function adminUpdateOrderStatus(req, res) {
+export const adminUpdateOrderStatus = async (req, res) => {
   try {
     const user = req.user;
-    if (!user) return res.status(401).json({ message: "Please login first" });
+
+    // 🛡️ Check if user is logged in
+    if (!user) {
+      return res.status(401).json({ message: "Please login first" });
+    }
+
+    // ✅ Admin permission check
     if (user.type !== "admin") {
       return res.status(403).json({ message: "Only admins can update order status" });
     }
 
     const { order_id } = req.params;
-    if (!order_id) return res.status(400).json({ message: "order_id is required in params" });
-
     const { status } = req.body;
-    if (typeof status !== "string" || !status.trim()) {
-      return res.status(400).json({ message: "Valid status is required in body" });
+
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
     }
 
-    const allowedStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
-    if (!allowedStatuses.includes(status.toLowerCase())) {
-      return res.status(400).json({ message: `Status must be one of: ${allowedStatuses.join(", ")}` });
+    const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
     }
 
-    const order = await Order.findOne({ order_id });
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const order = await Order.findOne({
+      $or: [{ order_id }, { _id: order_id }]
+    });
 
-    order.status = status.toLowerCase();
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Update status
+    order.order_status = status;
     await order.save();
 
-    // Telegram notification (non-blocking) using existing bot function
+    // ✅ Telegram notification (non-blocking)
     (async () => {
       try {
         const userRecord = await User.findOne({ email: order.user_email });
         const telegramChatId = userRecord?.telegram_chat_id;
         if (telegramChatId) {
-          // සාමාන්‍ය message payload එක
           const payload = {
             order_id: order.order_id,
-            status: order.status,
+            status: order.order_status,
             updated_at: new Date().toLocaleString(),
           };
-          // ඔයාගේ bot එකේ තිබෙන function එකක් කැඳවන්න
           await sendOrderStatusUpdate(telegramChatId.toString(), payload);
         }
-      } catch (botErr) {
-        console.warn("Failed to send order status update via Telegram:", botErr?.message || botErr);
+      } catch (err) {
+        console.error("Failed to send Telegram notification:", err.message);
       }
     })();
 
-    return res.status(200).json({ message: "Order status updated", order });
+    res.status(200).json({
+      message: "Order status updated successfully",
+      updated: order,
+    });
   } catch (err) {
-    console.error("Error updating order status:", err);
-    return res.status(500).json({ message: "Failed to update status", error: err.message });
+    console.error("Update Order Error:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
-}
+};

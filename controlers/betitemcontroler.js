@@ -14,7 +14,7 @@ function isAdmin(req, res) {
 async function generateUniqueProductId() {
   const count = await BetItem.countDocuments();
   const idNumber = (count + 1).toString().padStart(4, "0");
-  return `winzy_bp_${idNumber}`;
+  return `cooba_bp_${idNumber}`;
 }
 
 // ✅ CREATE Product

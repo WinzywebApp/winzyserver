@@ -13,9 +13,9 @@ const generateRequestId = async () => {
   if (lastRequest && lastRequest.request_id) {
     const lastNumber = parseInt(lastRequest.request_id.slice(9), 10); // Extract number after "winzy_pr_"
     const next = lastNumber + 1;
-    newId = `winzy_pr_${next.toString().padStart(4, "0")}`;
+    newId = `cooba_pr_${next.toString().padStart(4, "0")}`;
   } else {
-    newId = "winzy_pr_0001";
+    newId = "cooba_pr_0001";
   }
 
   return newId;
@@ -209,8 +209,8 @@ export const adminDeleteRequest = async (req, res) => {
       .status(500)
       .json({ message: "Error deleting request", error: err.message });
   }
-};
-
+};  
+ 
 
 export const getAllPaymentRequests = async (req, res) => {
   try {

@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
 dotenv.config()
 import VerificationCode from "../moduls/verification.js";
-import { sendVerificationCode,sendPasswordResetCode } from "../bot/bot.js"; 
+import { sendVerificationCode,sendPasswordResetCode, sendNewReferralNotification } from "../bot/bot.js"; 
 
 
 const REFERRAL_REWARD = 5;
@@ -24,7 +24,6 @@ export async function usercreat(req, res) {
       verification_code,
     } = req.body;
 
-    // අවශ්‍ය fields තිබෙනවාද බලන්න
     if (!email || !username || !password) {
       return res.status(400).json({ message: "email, username and password are required" });
     }
@@ -32,7 +31,6 @@ export async function usercreat(req, res) {
       return res.status(400).json({ message: "telegram_chat_id and verification_code required" });
     }
 
-    // verification code validate කරන්න
     const codeRecord = await VerificationCode.findOne({
       telegram_chat_id: telegram_chat_id.toString(),
       code: verification_code.toString(),
@@ -41,7 +39,6 @@ export async function usercreat(req, res) {
       return res.status(400).json({ message: "Invalid or expired verification code" });
     }
 
-    // admin creation permission check
     let userType = "customer";
     if (type === "admin") {
       if (!req.user || req.user.type !== "admin") {
@@ -50,10 +47,8 @@ export async function usercreat(req, res) {
       userType = "admin";
     }
 
-    // password hashing
     const hashedPassword = bcrypt.hashSync(password, 10);
 
-    // Generate unique referral code
     const generateUniqueReferralCode = async (length = 6) => {
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let code;
@@ -69,40 +64,34 @@ export async function usercreat(req, res) {
     };
     const referralCode = await generateUniqueReferralCode();
 
-    // Referral reward logic
     let initialCoinBalance = 0;
-if (refaral_from) {
-  const referrer = await User.findOne({ refaral_code: refaral_from });
-  if (referrer) {
-    // referrer එකට reward දීමේ සීමාව (අපේක්ෂිත max 5)
-    if ((referrer.refaral_count || 0) < 5) {
-      referrer.coin_balance = (referrer.coin_balance || 0) + REFERRAL_REWARD;
-      referrer.refaral_count = (referrer.refaral_count || 0) + 1;
-      await referrer.save();
-    } else {
-      console.log(`Referral reward limit reached for referrer ${referrer.user_id}`);
+    let referrer; // 🔵 declare to use later
+    if (refaral_from) {
+      referrer = await User.findOne({ refaral_code: refaral_from });
+      if (referrer) {
+        if ((referrer.refaral_count || 0) < 5) {
+          referrer.coin_balance = (referrer.coin_balance || 0) + REFERRAL_REWARD;
+          referrer.refaral_count = (referrer.refaral_count || 0) + 1;
+          await referrer.save();
+        } else {
+          console.log(`Referral reward limit reached for referrer ${referrer.user_id}`);
+        }
+        initialCoinBalance += REFERRAL_REWARD;
+      } else {
+        return res.status(400).json({ message: "Invalid referral code" });
+      }
     }
 
-    // referred user එකට එකවර 5 coin දෙනවා (valid code එකක් වුනොත්)
-    initialCoinBalance += REFERRAL_REWARD;
-  } else {
-    return res.status(400).json({ message: "Invalid referral code" });
-  }
-}
-
-
-    // Generate user_id in sequence
     const lastUser = await User.findOne({}).sort({ _id: -1 });
     let newUserId;
     if (lastUser && lastUser.user_id) {
       const lastNumber = parseInt(lastUser.user_id.slice(9), 10);
       const next = lastNumber + 1;
-      newUserId = `winzy_u_${next.toString().padStart(4, '0')}`;
+      newUserId = `cooba_u_${next.toString().padStart(4, '0')}`;
     } else {
-      newUserId = "winzy_u_0001";
+      newUserId = "cooba_u_0001";
     }
 
-    // Build and save user
     const newUser = new User({
       email,
       username,
@@ -115,13 +104,16 @@ if (refaral_from) {
       refaral_count: 0,
       user_id: newUserId,
       telegram_chat_id: telegram_chat_id,
-      
     });
 
     await newUser.save();
 
-    // Cleanup used verification code(s)
     await VerificationCode.deleteMany({ telegram_chat_id: telegram_chat_id.toString() });
+
+    // ✅ 🔔 Notify Referrer via Bot (if applicable)
+    if (referrer && referrer.telegram_chat_id) {
+      await sendNewReferralNotification(referrer.telegram_chat_id, newUser);
+    }
 
     return res.status(201).json({
       message: "User created and verified successfully",
@@ -138,17 +130,15 @@ if (refaral_from) {
       }
       if (err.message.includes("refaral_code")) {
         return res.status(400).json({ message: "Referral code collision, try again" });
-      }     
-      if (err.message.includes('telegram_chat_id')) {
-    return res.status(400).json({ message: 'Telegram chat ID already registered' });
-  }
-  
-
-
-}
+      }
+      if (err.message.includes("telegram_chat_id")) {
+        return res.status(400).json({ message: "Telegram chat ID already registered" });
+      }
+    }
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 }
+
 
  
 

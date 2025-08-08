@@ -2,16 +2,16 @@ import Product from "../moduls/product.js"
 import { isAdmin } from "./usercontroler.js";
 
 
-
-export async function productcreat(req, res) {
-  if (!isAdmin) {
-    return res.json({
-      message: "Please login with an admin account",
-    });
-  }
-
+export async function createProduct(req, res) {
   try {
-    // Find the latest product with item_id like 'winzy_p0001'
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Please log in first" });
+    }
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Only admin can create products" });
+    }
+
     const lastProduct = await Product.findOne({
       product_id: { $regex: /^winzy_p\d{4}$/ }
     })
@@ -19,34 +19,63 @@ export async function productcreat(req, res) {
       .exec();
 
     let newProductId;
-
     if (lastProduct && lastProduct.product_id) {
       const lastNumber = parseInt(lastProduct.product_id.slice(7), 10); // skip 'winzy_p'
       const nextNumber = lastNumber + 1;
-      newProductId = `winzy_p${nextNumber.toString().padStart(4, "0")}`;
+      newProductId = `cooba_p${nextNumber.toString().padStart(4, "0")}`;
     } else {
-      newProductId = "winzy_p0001"; // first product
+      newProductId = "cooba_p0001";
     }
 
-    const newProduct = new Product({
-      ...req.body,
-      product_id: newProductId, // ✅ correct usage
-    });
+    const {
+      name,
+      description,
+      coin_price,
+      main_price,
+      image,
+      quantaty, // frontend might be sending this typo; normalize below
+      category,
+      product_type,
+    } = req.body;
 
+    // Normalize quantity key (schema uses "quantaty" typo or correct? schema has "quantaty" so keep it)
+    const productData = {
+      name,
+      description,
+      coin_price: coin_price ?? 0,
+      main_price: main_price ?? 0,
+      image,
+      category,
+      product_type,
+      product_id: newProductId,
+      quantaty: typeof quantaty !== "undefined" ? quantaty : 0,
+    };
+
+    // Validate required
+    if (!name || !description || !image || !category || !product_type) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const newProduct = new Product(productData);
     await newProduct.save();
 
-    return res.json({
+    return res.status(201).json({
       message: "Product created successfully",
       product_id: newProductId,
+      product: newProduct,
     });
   } catch (err) {
-    console.error("Error saving product:", err);
+  
+    if (err.code === 11000) {
+      return res.status(409).json({ message: "Product ID conflict, try again" });
+    }
     return res.status(500).json({
       message: "Product creation failed",
       error: err.message,
-    }); 
+    });
   }
 }
+
 
 
 
@@ -88,27 +117,33 @@ export async function productFind(req, res) {
 
 export async function deleteProductByItemId(req, res) {
   try {
-    const { product_id } = req.params;
-
-    if (!product_id) {
-      return res.status(400).json({ message: "product_id is required" }); // ✅ fixed message
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ message: "Please log in first" });
+    }
+    if (user.type !== "admin" && !isAdmin(user)) {
+      return res.status(403).json({ message: "Only admin can delete products" });
     }
 
-    const deletedProduct = await Product.findOneAndDelete({ product_id: product_id });
+    const { product_id } = req.params;
+    if (!product_id) {
+      return res.status(400).json({ message: "product_id is required in params" });
+    }
 
+    const deletedProduct = await Product.findOneAndDelete({ product_id });
     if (!deletedProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
 
     return res.status(200).json({
       message: "Product deleted successfully",
-      deleted_product_id: product_id
+      deleted_product_id: product_id,
     });
   } catch (err) {
     console.error("Error deleting product:", err);
     return res.status(500).json({
       message: "Failed to delete product",
-      error: err.message
+      error: err.message,
     });
   }
 }
@@ -117,39 +152,36 @@ export async function deleteProductByItemId(req, res) {
 
 
 
-export async function updateProductByItemId(req, res) {
+
+export async function editProductByItemId(req, res) {
   try {
     const user = req.user;
     if (!user) {
       return res.status(401).json({ message: "Please log in first" });
     }
-    if (user.type !== "admin") {
+    if (user.type !== "admin" && !isAdmin(user)) {
       return res.status(403).json({ message: "Only admin can edit products" });
     }
 
-   const product_id = req.params.product_id || req.body.product_id;
-console.log("Received product_id:", product_id);
-if (!product_id) {
-  return res.status(400).json({ message: "product_id is required" });
-}
-    
+    const { product_id } = req.params;
+    if (!product_id) {
+      return res.status(400).json({ message: "product_id is required in params" });
+    }
 
-    // Make sure quantity is spelled correctly, and fields match frontend keys or vice versa
-    const updatedData = {
-      name: req.body.name,
-      description: req.body.description,
-      point_price: req.body.point_price, // OR rename frontend to send point_price
-      main_price: req.body.main_price,
-      image: req.body.image,
-      category: req.body.category,
-      product_type: req.body.product_type,
-      quantity: req.body.quantity,  // Fixed typo + field name
-    };
+    // Build update object according to schema
+    const updatedData = {};
+    if (req.body.name) updatedData.name = req.body.name;
+    if (req.body.description) updatedData.description = req.body.description;
+    if (typeof req.body.coin_price !== "undefined") updatedData.coin_price = req.body.coin_price;
+    if (typeof req.body.main_price !== "undefined") updatedData.main_price = req.body.main_price;
+    if (req.body.image) updatedData.image = req.body.image;
+    if (req.body.category) updatedData.category = req.body.category;
+    if (req.body.product_type) updatedData.product_type = req.body.product_type;
+    if (typeof req.body.quantaty !== "undefined") updatedData.quantaty = req.body.quantaty;
 
-    // Remove undefined keys from updatedData (optional but recommended)
-    Object.keys(updatedData).forEach(
-      (key) => updatedData[key] === undefined && delete updatedData[key]
-    );
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({ message: "No valid fields provided to update" });
+    }
 
     const updatedProduct = await Product.findOneAndUpdate(
       { product_id },
