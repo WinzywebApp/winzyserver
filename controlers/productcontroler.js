@@ -13,7 +13,7 @@ export async function createProduct(req, res) {
     }
 
     const lastProduct = await Product.findOne({
-      product_id: { $regex: /^winzy_p\d{4}$/ }
+      product_id: { $regex: /^cooba_p\d{4}$/ }
     })
       .sort({ product_id: -1 })
       .exec();
