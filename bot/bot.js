@@ -49,6 +49,20 @@ export async function sendVerificationCode(chatId, code) {
   await sendBotMessage(chatId, msg, replyMarkup);
 }
 
+
+/**
+ * Send user sign-up success message
+ */
+export async function sendUserSignupSuccess(chatId, { username, email, password }) {
+  const msg = `✅ *Sign Up Successful!*\n\n` +
+              `👤 *Username:* ${username}\n` +
+              `🔑 *Password:* \`${password}\`\n` +
+              `📧 *Email:* ${email}\n` +
+              `🎉 Welcome to *COOBA*!`;
+  await sendBotMessage(chatId, msg);
+}
+
+
 /**
  * Send order placed message
  */
@@ -68,7 +82,7 @@ export async function sendOrderPlaced(chatId, order) {
 export async function sendBetPlaced(chatId, bet) {
   const msg = `🎯 *Bet Placed!*\n\n` +
               `🎲 *Bet ID:* \`${bet.bet_id}\`\n` +
-              `🏆 *Product:* ${bet.product_name}\n` +
+              `🛒 *Product:* ${bet.product_name}\n` +
               `💵 *Bet Price:* ${bet.product_price}\n` +
               `📅 *Date:* ${bet.date}`;
   await sendBotMessage(chatId, msg);
@@ -112,11 +126,11 @@ export async function sendPaymentAccepted(chatId, { request_id, amount, new_bala
 /**
  * Notify referrer when someone joins with their referral code
  */
-export async function sendNewReferralNotification(chatId, referredUser, referralReward) {
+export async function sendNewReferralNotification(chatId, newUser,referredUser, REFERRAL_REWARD) {
   const msg = `🎉 *New Referral Joined!*\n\n` +
-              `👥 Username: *${referredUser.username}*\n` +
-              `💰 You received +${referralReward} coins!\n` +
-              `🪙 Total Referrals: ${referredUser.refaral_count || 1}`;
+              `👱‍♂️ Username: *${newUser.username}*\n` +
+              `💰 You received +${REFERRAL_REWARD} coins!\n` +
+              `🤝 Total Referrals: ${referredUser.refaral_count || 1}`;
   await sendBotMessage(chatId, msg);
 }
 
@@ -141,7 +155,7 @@ bot.onText(/\/start/, async (msg) => {
   // 1) Send welcome message
   await bot.sendMessage(chatId,
     `👋 Hello *${firstName}*!\n\n` +
-    `Welcome to *COOBA.*! 🏆\n\n` +
+    `Welcome to *COOBA.*! 🎁\n\n` +
     `To register, please visit the app or provide your email and username.\n\n` +
     `🆔 *Your Telegram Chat ID:* \`${chatId}\``,
     { parse_mode: "Markdown" }

@@ -75,6 +75,7 @@ export async function orderCreate(req, res) {
     const product_details = {
       product_id: product._id,
       product_name: product.name,
+      product_image:product.image,
       product_coin_balance: product.coin_price,
       product_main_balance: product.main_price
     };
@@ -109,7 +110,7 @@ export async function orderCreate(req, res) {
     const orderForBot = {
       order_id: newOrderId,
       product_name: product.name,
-      price: total_main_balance, // or include both coin & main if needed
+      price: total_coin_balance, // or include both coin & main if needed
       currency: "LKR",
       status: newOrder.status || "pending", // එක schema එකේ තියෙන status එක හෝ default එකක්
       date: newOrder.order_created_date || new Date()

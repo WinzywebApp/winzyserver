@@ -4,10 +4,10 @@ import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
 dotenv.config()
 import VerificationCode from "../moduls/verification.js";
-import { sendVerificationCode,sendPasswordResetCode, sendNewReferralNotification } from "../bot/bot.js"; 
+import { sendVerificationCode,sendPasswordResetCode, sendNewReferralNotification, sendUserSignupSuccess } from "../bot/bot.js"; 
 
 
-const REFERRAL_REWARD = 5;
+const REFERRAL_REWARD = 25;
 
  // TTL schema model
 
@@ -110,9 +110,16 @@ export async function usercreat(req, res) {
 
     await VerificationCode.deleteMany({ telegram_chat_id: telegram_chat_id.toString() });
 
+    // ✅ Send signup success message via Telegram
+    await sendUserSignupSuccess(telegram_chat_id, {
+      username,
+      email,
+      password
+    });
+
     // ✅ 🔔 Notify Referrer via Bot (if applicable)
     if (referrer && referrer.telegram_chat_id) {
-      await sendNewReferralNotification(referrer.telegram_chat_id, newUser);
+      await sendNewReferralNotification(referrer.telegram_chat_id, newUser, REFERRAL_REWARD);
     }
 
     return res.status(201).json({

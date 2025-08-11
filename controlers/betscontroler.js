@@ -195,6 +195,7 @@ export async function placeBet(req, res) {
       product_id: product.product_id,
       product_name: product.name,
       product_price: product.main_price,
+      product_image: product.image,
       quantity,
       created_at: new Date(),
     });

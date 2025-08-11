@@ -80,10 +80,15 @@ const userSchema = new mongoose.Schema({
   telegram_chat_id: {
     type: Number,
     default: null,
+  },
+  user_image:{
+    type:String,
+    default:"https://i.ibb.co/dwhB6Xy0/who-has-any-bart-simpson-pfps-not-the-horrible-emo-ones-v0-869inxr4zljd1.jpg"
   }
 
 }, { timestamps: true });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model ("User", userSchema);
 
 export default User;
+  
