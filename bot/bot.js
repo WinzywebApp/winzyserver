@@ -129,7 +129,7 @@ export async function sendPaymentAccepted(chatId, { request_id, amount, new_bala
 export async function sendNewReferralNotification(chatId, newUser,referredUser, REFERRAL_REWARD) {
   const msg = `🎉 *New Referral Joined!*\n\n` +
               `👱‍♂️ Username: *${newUser.username}*\n` +
-              `💰 You received +${REFERRAL_REWARD} coins!\n` +
+              `💰 You received coins *25*\n` +
               `🤝 Total Referrals: ${referredUser.refaral_count || 1}`;
   await sendBotMessage(chatId, msg);
 }
