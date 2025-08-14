@@ -74,8 +74,8 @@ export async function selectWinnerByAdmin(req, res) {
       {
         $setOnInsert: {
           product_id: product.product_id,
+          product_image:product.image,
           product_name: product.name,
-          product_image: product.product_image,
           product_price: product.main_price,
           user_email: selectedBet.user_email,
           user_name: selectedBet.user_info?.name ,

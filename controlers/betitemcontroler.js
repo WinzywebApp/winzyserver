@@ -50,9 +50,11 @@ export async function createBetItem(req, res) {
     res.status(201).json({ message: "Product created", item: newItem });
   } catch (err) {
     res.status(500).json({ message: "Error creating product", error: err.message });
+    console.log(err)
   }
 }
  
+
 
 // ✅ GET ALL Products
 export async function getAllBetItems(req, res) {

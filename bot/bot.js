@@ -111,7 +111,7 @@ export async function sendOrderStatusUpdate(chatId, { order_id, status, updated_
   await sendBotMessage(chatId, msg);
 }
 
-/**
+/**   
  * Payment request accepted notification
  */
 export async function sendPaymentAccepted(chatId, { request_id, amount, new_balance, timestamp }) {

@@ -21,9 +21,9 @@ function chooseNormalNumber() {
 }
 
 function coinsForNumber(num) {
-  if (num >= 1 && num <= 2000) return mul10(rand(0, 50));
-  if (num >= 2500 && num <= 4000) return mul10(rand(40, 100));
-  if (num >= 4500 && num <= 5000) return mul10(rand(100, 150));
+  if (num >= 1 && num <= 2000) return mul10(rand(0, 100));
+  if (num >= 2500 && num <= 4000) return mul10(rand(100, 200));
+  if (num >= 4500 && num <= 5000) return mul10(rand(200, 550));
   return 0;
 }
 

@@ -3,7 +3,7 @@ import User from "../moduls/user.js";
 import { DateTime } from "luxon";
 
 const MAX_ADS_PER_DAY = 20;
-const COINS_PER_AD = 100;
+const COINS_PER_AD = 150;
 
 export const watchAd = async (req, res) => {
   try {
